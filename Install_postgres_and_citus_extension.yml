@@ -54,6 +54,8 @@
       shell: |
         echo "postgres connection"
       register: postgres_connection
+
+    - name: Display the output
       debug:
         msg: "{{ postgres_connection }}"
 
@@ -65,5 +67,3 @@
         sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
         sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
         sudo systemctl restart sshd
-
-    
