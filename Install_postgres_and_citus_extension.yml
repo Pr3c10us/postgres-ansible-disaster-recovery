@@ -8,13 +8,15 @@
     # - name: Import the repository signing key
     #   shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
-    - name: download sources
-      get_url: 
-        url=  https://www.postgresql.org/media/keys/ACCC4CF8.asc
-        dest= /tmp/ACCC4CF8.asc
+    # - name: download sources
+    #   get_url:
+    #     url=  https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    #     dest= /tmp/ACCC4CF8.asc
 
-    - name: Add key from /tmp/ACCC4CF8.asc
-      shell: apt-key add /tmp/ACCC4CF8.asc
+    - name: Import the repository signing key
+      apt_key:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        state: present
 
     - name: Update the package lists
       apt:
