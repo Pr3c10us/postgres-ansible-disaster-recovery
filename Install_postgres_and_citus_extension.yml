@@ -5,18 +5,18 @@
     - name: Create the file repository configuration
       shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
-    # - name: Import the repository signing key
-    #   shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    - name: Import the repository signing key
+      shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
     # - name: download sources
     #   get_url:
     #     url=  https://www.postgresql.org/media/keys/ACCC4CF8.asc
     #     dest= /tmp/ACCC4CF8.asc
 
-    - name: Import the repository signing key
-      apt_key:
-        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-        state: present
+    # - name: Import the repository signing key
+    #   apt_key:
+    #     url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    #     state: present
 
     - name: Update the package lists
       apt:
