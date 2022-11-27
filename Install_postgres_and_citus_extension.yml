@@ -1,0 +1,69 @@
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Create the file repository configuration
+      shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+    - name: Import the repository signing key
+      shell: wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+    - name: Update the package lists
+      apt:
+        update_cache: yes
+
+    - name: Install the latest version of PostgreSQL
+      apt:
+        pkg:
+          - postgresql
+          - sshpass
+        state: latest
+
+    - name: Install and Enable the Citus extension
+      shell: |
+        curl https://install.citusdata.com/community/deb.sh > add-citus-repo.sh
+        bash add-citus-repo.sh
+
+    - name: Install the Citus extension
+      apt:
+        pkg:
+          - postgresql-15-citus-11.1
+        state: latest
+
+    - name: Preload citus extension
+      shell: |
+        pg_conftool 15 main set shared_preload_libraries citus
+        systemctl restart postgresql
+        pg_conftool 15 main set listen_addresses '*'
+
+    - name: Restart the PostgreSQL service
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: Make sure it starts on boot
+      shell: update-rc.d postgresql enable
+
+    - name: Add the citus extension to the postgres database
+      shell: |
+        sudo -i -u postgres psql -c "CREATE EXTENSION citus;"
+        sudo mkdir -p /logs/archive
+        sudo chown postgres:postgres -R /logs/
+
+    - name: echo "postgres connection"
+      shell: |
+        echo "postgres connection"
+      register: postgres_connection
+      debug:
+        msg: "{{ postgres_connection }}"
+
+    - name:
+      shell: echo 'postgres:postgres' | sudo chpasswd
+
+    - name: Change sshd config so that it allows password authentication
+      shell: |
+        sudo sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config
+        sudo sed -i 's/ChallengeResponseAuthentication no/ChallengeResponseAuthentication yes/' /etc/ssh/sshd_config
+        sudo systemctl restart sshd
+
+    
