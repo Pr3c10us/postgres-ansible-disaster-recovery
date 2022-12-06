@@ -1,0 +1,51 @@
+---
+- hosts: "{{aws_IP}}"
+  become: true
+  tasks:
+    - name: ssh into postgres server
+      shell: sshpass -p 'postgres' ssh -o StrictHostKeyChecking=no postgres@{{aws_IP}} 'echo "postgres connection"'
+      register: postgres_connection
+
+    - name: Display the output
+      debug:
+        msg: "{{postgres_connection.stdout}}"
+
+    - name: Get the fingerprint of the key from postgres from azure_Instance
+      shell: ssh-keyscan -H {{azure_IP}} >> ~/.ssh/known_hosts
+      register: fingerprint
+
+    - name: Display the output
+      debug:
+        msg: "{{fingerprint.stdout}}"
+
+    - name: Generate the key pair
+      shell: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
+
+    - name: Copy the key to the azure_Instance
+      shell: sshpass -p 'postgres' ssh-copy-id postgres@{{azure_IP}}
+
+# Repeat for azure_Instance to aws_IP
+- hosts: "{{azure_IP}}"
+  become: true
+  tasks:
+    - name: ssh into postgres server
+      shell: sshpass -p 'postgres' ssh -o StrictHostKeyChecking=no postgres@{{azure_IP}} 'echo "postgres connection"'
+      register: postgres_connection
+
+    - name: Display the output
+      debug:
+        msg: "{{postgres_connection.stdout}}"
+
+    - name: Get the fingerprint of the key from postgres from azure_Instance
+      shell: ssh-keyscan -H {{aws_IP}} >> ~/.ssh/known_hosts
+      register: fingerprint
+
+    - name: Display the output
+      debug:
+        msg: "{{fingerprint.stdout}}"
+
+    - name: Generate the key pair
+      shell: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
+
+    - name: Copy the key to the azure_Instance
+      shell: sshpass -p 'postgres' ssh-copy-id postgres@{{aws_IP}}
