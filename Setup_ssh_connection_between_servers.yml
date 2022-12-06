@@ -2,6 +2,9 @@
 - hosts: "{{aws_IP}}"
   become: true
   tasks:
+    - name: create a directory for the ssh keys
+      shell: su - postgres -c 'mkdir -p ~/.ssh'
+        
     - name: Get the fingerprint of the key from postgres from azure_Instance
       shell: su - postgres -c 'ssh-keyscan -H {{azure_IP}} >> ~/.ssh/known_hosts'
 
@@ -15,6 +18,9 @@
 - hosts: "{{azure_IP}}"
   become: true
   tasks:
+    - name: create a directory for the ssh keys
+      shell: su - postgres -c 'mkdir -p ~/.ssh'
+        
     - name: Get the fingerprint of the key from postgres from azure_Instance
       shell: su - postgres -c 'ssh-keyscan -H {{aws_IP}} >> ~/.ssh/known_hosts'
 
