@@ -2,21 +2,15 @@
 - hosts: "{{aws_IP}}"
   become: true
   tasks:
-    - name: ssh into postgres server
-      shell: sshpass -p 'postgres' ssh -o StrictHostKeyChecking=no postgres@{{aws_IP}} 'echo "postgres connection"'
-      register: postgres_connection
-
-    - name: Display the output
+    - name: Debug the output
       debug:
-        msg: "{{postgres_connection.stdout}}"
+        msg: "{{aws_IP}} {{azure_IP}}"
+
+    - name: ssh into postgres server
+      shell: sshpass -p 'postgres' ssh -o StrictHostKeyChecking=no postgres@localhost
 
     - name: Get the fingerprint of the key from postgres from azure_Instance
       shell: ssh-keyscan -H {{azure_IP}} >> ~/.ssh/known_hosts
-      register: fingerprint
-
-    - name: Display the output
-      debug:
-        msg: "{{fingerprint.stdout}}"
 
     - name: Generate the key pair
       shell: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
@@ -28,21 +22,15 @@
 - hosts: "{{azure_IP}}"
   become: true
   tasks:
-    - name: ssh into postgres server
-      shell: sshpass -p 'postgres' ssh -o StrictHostKeyChecking=no postgres@{{azure_IP}} 'echo "postgres connection"'
-      register: postgres_connection
-
-    - name: Display the output
+    - name: Debug the output
       debug:
-        msg: "{{postgres_connection.stdout}}"
+        msg: "{{aws_IP}} {{azure_IP}}"
+
+    - name: ssh into postgres server
+      shell: sshpass -p 'postgres' ssh -o StrictHostKeyChecking=no postgres@localhost
 
     - name: Get the fingerprint of the key from postgres from azure_Instance
       shell: ssh-keyscan -H {{aws_IP}} >> ~/.ssh/known_hosts
-      register: fingerprint
-
-    - name: Display the output
-      debug:
-        msg: "{{fingerprint.stdout}}"
 
     - name: Generate the key pair
       shell: ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ''
