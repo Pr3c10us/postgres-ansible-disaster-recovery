@@ -54,7 +54,7 @@
       expect:
         command: sudo pg_basebackup -h {{aws_IP}} -D /var/lib/postgresql/15/main -U repuser --checkpoint=fast -C -S secondary -P -v -R -X stream
         responses:
-          "Password:": { { repuser_password } }
+          "Password:": {{repuser_password}}
 
     - name: Add following lines of code in “postgresql.auto.conf” file
       shell: |
