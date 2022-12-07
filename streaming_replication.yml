@@ -4,9 +4,9 @@
   tasks:
     - name: Edit Primary db config
       shell: |
-        sed -i 's/#wal_level = replica/wal_level = replica/g' /etc/postgresql/15/main/postgresql.conf
-        sed -i 's/#archive_mode = off/archive_mode = on/g' /etc/postgresql/15/main/postgresql.conf
-        sed -i 's/#archive_command = ''/archive_command = 'cp %p /logs/archive/%f'/g' /etc/postgresql/15/main/postgresql.conf
+        sed -i "s/#wal_level = replica/wal_level = replica/g" /etc/postgresql/15/main/postgresql.conf
+        sed -i "s/#archive_mode = off/archive_mode = on/g" /etc/postgresql/15/main/postgresql.conf
+        sed -i "s/#archive_command = ''/archive_command = 'cp %p \/logs\/archive\/%f'/g" /etc/postgresql/15/main/postgresql.conf
 
     - name: Restart the PostgreSQL service
       service:
