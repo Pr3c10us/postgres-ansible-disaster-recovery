@@ -1,69 +1,69 @@
-# ---
-# - hosts: "{{aws_IP}}"
-#   become: true
-#   tasks:
-#     - name: Edit Primary db config
-#       shell: |
-#         sed -i "s/#wal_level = replica/wal_level = replica/g" /etc/postgresql/15/main/postgresql.conf
-#         sed -i "s/#archive_mode = off/archive_mode = on/g" /etc/postgresql/15/main/postgresql.conf
-#         sed -i "s/#archive_command = ''/archive_command = 'cp %p \/logs\/archive\/%f'/g" /etc/postgresql/15/main/postgresql.conf
+---
+- hosts: "{{aws_IP}}"
+  become: true
+  tasks:
+    - name: Edit Primary db config
+      shell: |
+        sed -i "s/#wal_level = replica/wal_level = replica/g" /etc/postgresql/15/main/postgresql.conf
+        sed -i "s/#archive_mode = off/archive_mode = on/g" /etc/postgresql/15/main/postgresql.conf
+        sed -i "s/#archive_command = ''/archive_command = 'cp %p \/logs\/archive\/%f'/g" /etc/postgresql/15/main/postgresql.conf
 
-#     - name: Restart the PostgreSQL service
-#       service:
-#         name: postgresql
-#         state: restarted
+    - name: Restart the PostgreSQL service
+      service:
+        name: postgresql
+        state: restarted
 
-#     - name: Select pg_switch_wal() on the primary
-#       shell: |
-#         sudo -i -u postgres psql -c "SELECT pg_switch_wal();"
+    - name: Select pg_switch_wal() on the primary
+      shell: |
+        sudo -i -u postgres psql -c "SELECT pg_switch_wal();"
 
-#     - name: Create a replication user
-#       shell: |
-#         sudo -i -u postgres psql -c "CREATE ROLE repuser WITH REPLICATION PASSWORD '{{repuser_password}}' LOGIN;"
+    - name: Create a replication user
+      shell: |
+        sudo -i -u postgres psql -c "CREATE ROLE repuser WITH REPLICATION PASSWORD '{{repuser_password}}' LOGIN;"
 
-#     - name: Edit the pg_hba.conf file
-#       shell: |
-#         sed -i  '98 i host    replication     repuser         {{azure_IP}}/32         scram-sha-256' /etc/postgresql/15/main/pg_hba.conf
+    - name: Edit the pg_hba.conf file
+      shell: |
+        sed -i  '98 i host    replication     repuser         {{azure_IP}}/32         scram-sha-256' /etc/postgresql/15/main/pg_hba.conf
 
-#     - name: Reload the PostgreSQL service
-#       service:
-#         name: postgresql
-#         state: reloaded
+    - name: Reload the PostgreSQL service
+      service:
+        name: postgresql
+        state: reloaded
 
 - hosts: "{{azure_IP}}"
   become: true
   tasks:
-    # - name: Stop the PostgreSQL service
-    #   service:
-    #     name: postgresql
-    #     state: stopped
+    - name: Stop the PostgreSQL service
+      service:
+        name: postgresql
+        state: stopped
 
-    # - name: Remove the main folder
-    #   shell: |
-    #     rm -rf /var/lib/postgresql/15/main
+    - name: Remove the main folder
+      shell: |
+        rm -rf /var/lib/postgresql/15/main
 
-    # - name: Create the main folder
-    #   shell: |
-    #     mkdir -p /var/lib/postgresql/15/main
+    - name: Create the main folder
+      shell: |
+        mkdir -p /var/lib/postgresql/15/main
 
-    # - name: Change the owner of the main folder
-    #   shell: |
-    #     chown -R postgres:postgres /var/lib/postgresql/15/main
+    - name: Change the owner of the main folder
+      shell: |
+        chown -R postgres:postgres /var/lib/postgresql/15/main
 
-    # - name: Run pg_basebackup
-    #   expect:
-    #     command: sudo pg_basebackup -h {{aws_IP}} -D /var/lib/postgresql/15/main -U repuser --checkpoint=fast -C -S secondary -P -v -R -X stream
-    #     responses:
-    #       "Password:": "{{repuser_password}}"
+    - name: Run pg_basebackup
+      expect:
+        command: sudo pg_basebackup -h {{aws_IP}} -D /var/lib/postgresql/15/main -U repuser --checkpoint=fast -C -S secondary -P -v -R -X stream
+        responses:
+          "Password:": "{{repuser_password}}"
 
-    # - name: Add following lines of code in postgresql.auto.conf file
-    #   shell: |
-    #     sed -i "10 i restore_command = 'cp \/logs\/archive\/%f %p'" /var/lib/postgresql/15/main/postgresql.auto.conf
-    #     sed -i "recovery_target_timeline = 'latest'" /var/lib/postgresql/15/main/postgresql.auto.conf
+    - name: Add following lines of code in postgresql.auto.conf file
+      shell: |
+        sed -i "10 i restore_command = 'cp \/logs\/archive\/%f %p'" /var/lib/postgresql/15/main/postgresql.auto.conf
+        sed -i "recovery_target_timeline = 'latest'" /var/lib/postgresql/15/main/postgresql.auto.conf
 
-    # - name: Change the postgres main file to 700
-    #   shell: |
-    #     chmod 0700 -R /var/lib/postgresql/15/main
+    - name: Change the postgres main file to 700
+      shell: |
+        chmod 0700 -R /var/lib/postgresql/15/main
 
     - name: Start the PostgreSQL service
       service:
