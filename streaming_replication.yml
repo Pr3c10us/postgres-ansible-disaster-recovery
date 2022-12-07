@@ -56,10 +56,10 @@
         responses:
           "Password:": "{{repuser_password}}"
 
-    - name: Add following lines of code in “postgresql.auto.conf” file
+    - name: Add following lines of code in postgresql.auto.conf file
       shell: |
-        echo "restore_command = 'scp postgres@{{aws_IP}}:/logs/archive/%f %p' >> /var/lib/postgresql/15/main/postgresql.auto.conf
-        echo "recovery_target_timeline = 'latest'" >> /var/lib/postgresql/15/main/postgresql.auto.conf
+        sed -i "10 i restore_command = 'cp \/logs\/archive\/%f %p'" /var/lib/postgresql/15/main/postgresql.auto.conf
+        sed -i "recovery_target_timeline = 'latest'" /var/lib/postgresql/15/main/postgresql.auto.conf
 
     - name: Change the postgres main file to 700
       shell: |
