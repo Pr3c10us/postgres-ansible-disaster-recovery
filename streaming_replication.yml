@@ -70,11 +70,6 @@
         name: postgresql
         state: started
 
-    - name: Check the status of the PostgreSQL service
-      service:
-        name: postgresql
-        state: status
-
     - name: Update pg_hba file. To add aws server info –
       shell: |
         sed -i  '98 i host    replication     repuser         {{aws_IP}}/32         scram-sha-256' /etc/postgresql/15/main/pg_hba.conf
