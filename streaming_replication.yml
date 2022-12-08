@@ -19,7 +19,7 @@
           - postgresql-client
         state: latest
 
-- hosts: { { aws_IP } }
+- hosts: {{aws_IP}}
   become: true
   tasks:
     - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
@@ -39,7 +39,7 @@
         name: postgresql
         state: restarted
 
-- hosts: { { azure_IP } }
+- hosts: {{azure_IP}}
   become: true
   tasks:
     - name: Stop PostgreSQL on Slave server
