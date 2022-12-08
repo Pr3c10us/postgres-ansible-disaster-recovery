@@ -1,43 +1,43 @@
 ---
-# - hosts: all
-#   become: true
-#   tasks:
-#     - name: Create the file repository configuration
-#       shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+- hosts: all
+  become: true
+  tasks:
+    - name: Create the file repository configuration
+      shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
 
-#     - name: Import the repository signing key
-#       shell: wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+    - name: Import the repository signing key
+      shell: wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
 
-#     - name: Update the package lists
-#       apt:
-#         update_cache: yes
+    - name: Update the package lists
+      apt:
+        update_cache: yes
 
-#     - name: Install the latest version of PostgreSQL
-#       apt:
-#         pkg:
-#           - postgresql
-#           - postgresql-client
-#         state: latest
+    - name: Install the latest version of PostgreSQL
+      apt:
+        pkg:
+          - postgresql
+          - postgresql-client
+        state: latest
 
-# - hosts: "{{aws_IP}}"
-#   become: true
-#   tasks:
-#     - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
-#       shell: |
-#         sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/15/main/postgresql.conf
+- hosts: "{{aws_IP}}"
+  become: true
+  tasks:
+    - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
+      shell: |
+        sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/15/main/postgresql.conf
 
-#     - name: connect to PostgreSQL on master server and create replica login.
-#       shell: |
-#         sudo -i -u postgres psql -c "CREATE USER {{rep_user}} WITH REPLICATION PASSWORD '{{rep_user_password}}';"
+    - name: connect to PostgreSQL on master server and create replica login.
+      shell: |
+        sudo -i -u postgres psql -c "CREATE USER {{rep_user}} WITH REPLICATION PASSWORD '{{rep_user_password}}';"
 
-#     - name: Enter the following entry pg_hba.conf file which is located in
-#       shell: |
-#         echo "host    replication     {{rep_user}}      {{azure_IP}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
+    - name: Enter the following entry pg_hba.conf file which is located in
+      shell: |
+        echo "host    replication     {{rep_user}}      {{azure_IP}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
 
-#     - name: Restart the PostgreSQL service
-#       service:
-#         name: postgresql
-#         state: restarted
+    - name: Restart the PostgreSQL service
+      service:
+        name: postgresql
+        state: restarted
 
 - hosts: "{{azure_IP}}"
   become: true
@@ -49,20 +49,20 @@
 
     - name: Copy the content of the slave main to main_old
       shell: |
-        sudo -i -u postgres -c "cp -R \/var\/lib\/postgresql\/15\/main \/var\/lib\/postgresql\/15\/main_old"
+        sudo -i -u postgres cp -R /var/lib/postgresql/15/main /var/lib/postgresql/15/main_old
     - name: Remove the content of the slave main
       shell: |
-        sudo -i -u postgres -c "rm -rf \/var\/lib\/postgresql\/15\/main"
+        sudo -i -u postgres rm -rf /var/lib/postgresql/15/main/
 
     - name: Now, use basebackup to take the base backup with the right ownership with postgres(or any user with right permissions).
       expect:
-        command: sudo -i -u postgres -c "pg_basebackup -h {{aws_IP}} -D \/var\/lib\/postgresql\/15\/main -U {{rep_user}} -P -v -R -X stream -C -S slaveslot"
+        command: sudo -i -u postgres pg_basebackup -h {{aws_IP}} -D /var/lib/postgresql/15/main -U {{rep_user}} -P -v -R -X stream -C -S slaveslot
         responses:
           "Password:": "{{rep_user_password}}"
 
     - name: Check if standby.signal file is created in the main directory
       shell: |
-        sudo -i -u postgres -c "ls -ltrh \/var\/lib\/postgresql\/15\/main"
+        sudo -i -u postgres ls -ltrh /var/lib/postgresql/15/main/
       register: standby_signal
 
     - name: Display the output
