@@ -1,80 +1,75 @@
 ---
-- hosts: "{{aws_IP}}"
+- hosts: all
   become: true
   tasks:
-    - name: Edit Primary db config
+    - name: Create the file repository configuration
+      shell: sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+    - name: Import the repository signing key
+      shell: wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee /etc/apt/trusted.gpg.d/pgdg.asc &>/dev/null
+
+    - name: Update the package lists
+      apt:
+        update_cache: yes
+
+    - name: Install the latest version of PostgreSQL
+      apt:
+        pkg:
+          - postgresql
+          - postgresql-client
+        state: latest
+
+- hosts: { { aws_IP } }
+  become: true
+  tasks:
+    - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
       shell: |
-        sed -i "s/#wal_level = replica/wal_level = replica/g" /etc/postgresql/15/main/postgresql.conf
-        sed -i "s/#archive_mode = off/archive_mode = on/g" /etc/postgresql/15/main/postgresql.conf
-        sed -i "s/#archive_command = ''/archive_command = 'cp %p \/logs\/archive\/%f'/g" /etc/postgresql/15/main/postgresql.conf
+        sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/15/main/postgresql.conf
+
+    - name: connect to PostgreSQL on master server and create replica login.
+      shell: |
+        sudo -i -u postgres psql -c "CREATE USER {{rep_user}} WITH REPLICATION PASSWORD '{{rep_user_password}}';"
+
+    - name: Enter the following entry pg_hba.conf file which is located in
+      shell: |
+        echo "host    replication     {{rep_user}}      {{azure_IP}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
 
     - name: Restart the PostgreSQL service
       service:
         name: postgresql
         state: restarted
 
-    - name: Select pg_switch_wal() on the primary
-      shell: |
-        sudo -i -u postgres psql -c "SELECT pg_switch_wal();"
-
-    - name: Create a replication user
-      shell: |
-        sudo -i -u postgres psql -c "CREATE ROLE repuser WITH REPLICATION PASSWORD '{{repuser_password}}' LOGIN;"
-
-    - name: Edit the pg_hba.conf file
-      shell: |
-        sed -i  '98 i host    replication     repuser         {{azure_IP}}/32         scram-sha-256' /etc/postgresql/15/main/pg_hba.conf
-
-    - name: Reload the PostgreSQL service
-      service:
-        name: postgresql
-        state: reloaded
-
-- hosts: "{{azure_IP}}"
+- hosts: { { azure_IP } }
   become: true
   tasks:
-    - name: Stop the PostgreSQL service
+    - name: Stop PostgreSQL on Slave server
       service:
         name: postgresql
         state: stopped
 
-    - name: Remove the main folder
+    - name: Copy the content of the slave main to main_old
       shell: |
-        rm -rf /var/lib/postgresql/15/main
-
-    - name: Create the main folder
+        sudo -i -u postgres -c "cp -R /var/lib/postgresql/15/main /var/lib/postgresql/15/main_old"
+    - name: Remove the content of the slave main
       shell: |
-        mkdir -p /var/lib/postgresql/15/main
+        sudo -i -u postgres -c "rm -rf /var/lib/postgresql/15/main/"
 
-    - name: Change the owner of the main folder
-      shell: |
-        chown -R postgres:postgres /var/lib/postgresql/15/main
-
-    - name: Run pg_basebackup
+    - name: Now, use basebackup to take the base backup with the right ownership with postgres(or any user with right permissions).
       expect:
-        command: sudo pg_basebackup -h {{aws_IP}} -D /var/lib/postgresql/15/main -U repuser --checkpoint=fast -C -S secondary -P -v -R -X stream
+        command: sudo -i -u postgres -c "pg_basebackup -h {{aws_IP}} -D /var/lib/postgresql/15/main -U {{rep_user}} -P -v -R -X stream -C -S slaveslot"
         responses:
-          "Password:": "{{repuser_password}}"
+          "Password:": "{{rep_user_password}}"
 
-    - name: Add following lines of code in postgresql.auto.conf file
+    - name: Check if standby.signal file is created in the main directory
       shell: |
-        sed -i "10 i restore_command = 'cp \/logs\/archive\/%f %p'" /var/lib/postgresql/15/main/postgresql.auto.conf
-        sed -i "recovery_target_timeline = 'latest'" /var/lib/postgresql/15/main/postgresql.auto.conf
+        sudo -i -u postgres -c "ls -ltrh /var/lib/postgresql/15/main/"
+      register: standby_signal
 
-    - name: Change the postgres main file to 700
-      shell: |
-        chmod 0700 -R /var/lib/postgresql/15/main
+    - name: Display the output
+      debug:
+        msg: "{{standby_signal.stdout}}"
 
-    - name: Start the PostgreSQL service
+    - name: Start PostgreSQL on Slave server
       service:
         name: postgresql
         state: started
-
-    - name: Update pg_hba file. To add aws server info –
-      shell: |
-        sed -i  '98 i host    replication     repuser         {{aws_IP}}/32         scram-sha-256' /etc/postgresql/15/main/pg_hba.conf
-
-    - name: Reload the PostgreSQL service
-      service:
-        name: postgresql
-        state: reloaded
