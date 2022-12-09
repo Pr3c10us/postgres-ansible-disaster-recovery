@@ -73,3 +73,36 @@
       service:
         name: postgresql
         state: started
+
+- hosts: "{{aws_IP_pgpool}}"
+  become: true
+  tasks:
+    - name: Install pgpool2
+      apt:
+        pkg:
+          - pgpool2
+        state: latest
+    
+    - name: Create the pgpool.conf file
+      shell: |
+        echo "listen_addresses = '*'" >> /etc/pgpool2/pgpool.conf
+        echo "port = 9999" >> /etc/pgpool2/pgpool.conf
+        echo "socket_dir = '/var/run/postgresql'" >> /etc/pgpool2/pgpool.conf
+        echo "pcp_socket_dir = '/var/run/postgresql'" >> /etc/pgpool2/pgpool.conf
+        echo "logdir = '/var/log/pgpool'" >> /etc/pgpool2/pgpool.conf
+        echo "pid_file_name = '/var/run/postgresql/pgpool.pid'" >> /etc/pgpool2/pgpool.conf
+        echo "backend_hostname0 = '{{aws_IP}}'" >> /etc/pgpool2/pgpool.conf
+        echo "backend_port0 = 5432" >> /etc/pgpool2/pgpool.conf
+        echo "backend_weight0 = 1" >> /etc/pgpool2/pgpool.conf
+        echo "backend_data_directory0 = '/var/lib/postgresql/15/main'" >> /etc/pgpool2/pgpool.conf
+        echo "backend_flag0 = 'ALLOW_TO_FAILOVER'" >> /etc/pgpool2/pgpool.conf
+        echo "backend_hostname1 = '{{azure_IP}}'" >> /etc/pgpool2/pgpool.conf
+        echo "backend_port1 = 5432" >> /etc/pgpool2/pgpool.conf
+        echo "backend_weight1 = 1" >> /etc/pgpool2/pgpool.conf
+        echo "backend_data_directory1 = '/var/lib/postgresql/15/main'" >> /etc/pgpool2/pgpool.conf
+        echo "backend_flag1 = 'ALLOW_TO_FAILOVER'" >> /etc/pgpool2/pgpool.conf
+        echo "sr_check_period = 10" >> /etc/pgpool2/pgpool.conf
+        echo "sr_check_user = 'postgres'" >> /etc/pgpool2/pgpool.conf
+        echo "sr_check_password = '{{rep_user_password}}'" >> /etc/pgpool2/pgpool.conf
+        echo "health_check_user = '{{rep_user}}'" >> /etc/pgpool2/pgpool.conf
+        echo "health_check_password = '{{rep_user_password}}'" >> /etc/pgpool2/pgpool.conf
