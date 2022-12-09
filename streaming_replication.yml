@@ -19,25 +19,25 @@
           - postgresql-client
         state: latest
 
-# - hosts: "{{aws_IP}}"
-#   become: true
-#   tasks:
-#     - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
-#       shell: |
-#         sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/15/main/postgresql.conf
+- hosts: "{{aws_IP}}"
+  become: true
+  tasks:
+    - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
+      shell: |
+        sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/15/main/postgresql.conf
 
-#     - name: connect to PostgreSQL on master server and create replica login.
-#       shell: |
-#         sudo -i -u postgres psql -c "CREATE USER {{rep_user}} WITH REPLICATION PASSWORD '{{rep_user_password}}';"
+    - name: connect to PostgreSQL on master server and create replica login.
+      shell: |
+        sudo -i -u postgres psql -c "CREATE USER {{rep_user}} WITH REPLICATION PASSWORD '{{rep_user_password}}';"
 
-#     - name: Enter the following entry pg_hba.conf file which is located in
-#       shell: |
-#         echo "host    replication     {{rep_user}}      {{azure_IP}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
+    - name: Enter the following entry pg_hba.conf file which is located in
+      shell: |
+        echo "host    replication     {{rep_user}}      {{azure_IP}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
 
-#     - name: Restart the PostgreSQL service
-#       service:
-#         name: postgresql
-#         state: restarted
+    - name: Restart the PostgreSQL service
+      service:
+        name: postgresql
+        state: restarted
 
 - hosts: "{{azure_IP}}"
   become: true
