@@ -33,6 +33,10 @@
     - name: Enter the following entry pg_hba.conf file which is located in
       shell: |
         echo "host    replication     {{rep_user}}      {{azure_IP}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
+    
+    - name: Enter the following entry pg_hba.conf file which is located in
+      shell: |
+        echo "host    all             all               {{aws_IP_haproxy}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
 
     - name: Restart the PostgreSQL service
       service:
@@ -77,6 +81,10 @@
     - name: Configure the IP address(es) listen to for connections from clients in postgresql.conf by removing '#'in front of listen_address and give *. Which means listen connections from all.
       shell: |
         sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/15/main/postgresql.conf
+
+    - name: Enter the following entry pg_hba.conf file which is located in
+      shell: |
+        echo "host    all             all               {{aws_IP_haproxy}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
 
     - name: Restart the PostgreSQL service
       service:
