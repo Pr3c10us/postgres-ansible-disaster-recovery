@@ -36,7 +36,7 @@
     
     - name: Enter the following entry pg_hba.conf file which is located in
       shell: |
-        echo "host    all             all               {{aws_IP_haproxy}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
+        echo "host    all             all               {{aws_IP_haproxy}}/32         trust" >> /etc/postgresql/15/main/pg_hba.conf
 
     - name: Restart the PostgreSQL service
       service:
@@ -84,7 +84,7 @@
 
     - name: Enter the following entry pg_hba.conf file which is located in
       shell: |
-        echo "host    all             all               {{aws_IP_haproxy}}/32         md5" >> /etc/postgresql/15/main/pg_hba.conf
+        echo "host    all             all               {{aws_IP_haproxy}}/32         trust" >> /etc/postgresql/15/main/pg_hba.conf
 
     - name: Restart the PostgreSQL service
       service:
